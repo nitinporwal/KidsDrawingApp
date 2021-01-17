@@ -4,14 +4,26 @@ import android.app.Dialog
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.ImageButton
+import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
+import androidx.core.view.get
 
 class MainActivity : AppCompatActivity() {
+
+    private var mImageButtonCurrentPaint: ImageButton? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         var drawingView = findViewById<DrawingView>(R.id.drawing_view)
-        drawingView.setBrushSize(20.toFloat())
+        drawingView.setBrushSize(10.toFloat())
+
+        var paintColorsLl = findViewById<LinearLayout>(R.id.ll_paint_colors)
+        mImageButtonCurrentPaint = paintColorsLl[0] as ImageButton
+        mImageButtonCurrentPaint!!.setImageDrawable(
+                ContextCompat.getDrawable(this, R.drawable.pallet_pressed)
+        )
 
         var brushIb = findViewById<ImageButton>(R.id.ib_brush)
         brushIb.setOnClickListener{
