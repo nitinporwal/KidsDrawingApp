@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.media.MediaScannerConnection
 import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -225,6 +226,15 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this@MainActivity, "Something went wrong while saving the file.", Toast.LENGTH_SHORT).show()
             }
             cancelProgressDialog()
+            MediaScannerConnection.scanFile(this@MainActivity, arrayOf(result), null) {
+                path, uri -> val shareInternt = Intent()
+                shareInternt.action = Intent.ACTION_SEND
+                shareInternt.putExtra(Intent.EXTRA_STREAM, uri)
+                shareInternt.type = "image/png"
+                startActivity(
+                        Intent.createChooser(shareInternt, "Share")
+                )
+            }
         }
 
         private fun showProgressDialog() {
