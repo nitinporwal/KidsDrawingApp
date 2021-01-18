@@ -1,13 +1,21 @@
 package com.example.kiddrawingapp
 
+import android.app.Activity
 import android.app.Dialog
+import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.View
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
+import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +37,38 @@ class MainActivity : AppCompatActivity() {
         var brushIb = findViewById<ImageButton>(R.id.ib_brush)
         brushIb.setOnClickListener{
             showBrushSizeChooserDialog()
+        }
+
+        var galleryIb = findViewById<ImageButton>(R.id.ib_gallery)
+        galleryIb.setOnClickListener {
+            if(isReadStorageAllowed()) {
+                var pickPhotoIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+
+                startActivityForResult(pickPhotoIntent, GALLERY)
+            }
+            else {
+                requestStoragePermission()
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(resultCode == Activity.RESULT_OK) {
+            if(requestCode == GALLERY) {
+                try {
+                    if(data!!.data != null) {
+                        var backgroundIv = findViewById<ImageView>(R.id.iv_background)
+                        backgroundIv.visibility = View.VISIBLE
+                        backgroundIv.setImageURI(data!!.data)
+                    }
+                    else {
+                        Toast.makeText(this, "Error in parsing the image or its curroupted.", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
@@ -90,5 +130,34 @@ class MainActivity : AppCompatActivity() {
             )
             mImageButtonCurrentPaint = view
         }
+    }
+
+    private fun requestStoragePermission() {
+        if(ActivityCompat.shouldShowRequestPermissionRationale(this, arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE).toString())) {
+            Toast.makeText(this, "Need permission to add a Background", Toast.LENGTH_SHORT).show()
+        }
+        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_CODE)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if(requestCode == STORAGE_PERMISSION_CODE) {
+            if(grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Permission granted now you can read the storage files.", Toast.LENGTH_LONG).show()
+            }
+            else {
+                Toast.makeText(this, "Oops you just denied the permission.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun isReadStorageAllowed(): Boolean {
+        val result = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+        return result == PackageManager.PERMISSION_GRANTED
+    }
+
+    companion object {
+        private const val STORAGE_PERMISSION_CODE = 1
+        private const val GALLERY = 2
     }
 }
