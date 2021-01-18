@@ -50,6 +50,11 @@ class MainActivity : AppCompatActivity() {
                 requestStoragePermission()
             }
         }
+
+        var undoIb = findViewById<ImageButton>(R.id.ib_undo)
+        undoIb.setOnClickListener {
+            drawingView.onClickUndo()
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
