@@ -7,17 +7,18 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.Toast
+import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
@@ -57,6 +58,17 @@ class MainActivity : AppCompatActivity() {
         var undoIb = findViewById<ImageButton>(R.id.ib_undo)
         undoIb.setOnClickListener {
             drawingView.onClickUndo()
+        }
+
+        var saveIb = findViewById<ImageButton>(R.id.ib_save)
+        var drawingViewContainerFl = findViewById<FrameLayout>(R.id.fl_drawing_view_container)
+        saveIb.setOnClickListener {
+            if(isReadStorageAllowed()) {
+                BitmapAsyncTask(getBitmapFromView(drawingViewContainerFl)).execute()
+            }
+            else {
+                requestStoragePermission()
+            }
         }
     }
 
@@ -176,6 +188,55 @@ class MainActivity : AppCompatActivity() {
         }
         view.draw(canvas)
         return returnedBitmap
+    }
+
+    private inner class BitmapAsyncTask(val mBitmap: Bitmap): AsyncTask<Any, Void, String>(){
+
+        private lateinit var mProgressDialog: Dialog
+        override fun onPreExecute() {
+            super.onPreExecute()
+            showProgressDialog()
+        }
+        override fun doInBackground(vararg params: Any?): String {
+            var result = ""
+            if(mBitmap != null) {
+                try {
+                    val bytes = ByteArrayOutputStream()
+                    mBitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
+                    val f = File(externalCacheDir!!.absoluteFile.toString() + File.separator + "KidsDrawingApp_" + System.currentTimeMillis()/1000 + ".png")
+                    val fos = FileOutputStream(f)
+                    fos.write(bytes.toByteArray())
+                    fos.close()
+                    result = f.absolutePath
+                } catch (e: Exception) {
+                    result = ""
+                    e.printStackTrace()
+                }
+            }
+            return result
+        }
+
+        override fun onPostExecute(result: String?) {
+            super.onPostExecute(result)
+            if(!result!!.isEmpty()) {
+                Toast.makeText(this@MainActivity, "File saved successfully : $result", Toast.LENGTH_SHORT).show()
+            }
+            else {
+                Toast.makeText(this@MainActivity, "Something went wrong while saving the file.", Toast.LENGTH_SHORT).show()
+            }
+            cancelProgressDialog()
+        }
+
+        private fun showProgressDialog() {
+            mProgressDialog = Dialog(this@MainActivity)
+            mProgressDialog.setContentView(R.layout.dialog_custom_progress)
+            mProgressDialog.show()
+        }
+
+        private fun cancelProgressDialog() {
+            mProgressDialog.dismiss()
+        }
+
     }
 
     companion object {
